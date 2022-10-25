@@ -1,5 +1,5 @@
 // use crate::{MangaObject, MangaResult};
-use super::models::{Chapter, Filter, Listing, Manga, MangaResult, Page, KVC};
+use super::models::{Chapter, DeepLink, Filter, Listing, Manga, MangaResult, Page, KVC};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 use wasmer::{LazyInit, Memory, ValueType, WasmPtr, WasmerEnv};
@@ -7,8 +7,8 @@ use wasmer::{LazyInit, Memory, ValueType, WasmPtr, WasmerEnv};
 #[derive(Clone, Debug)]
 pub enum WasmObject {
     Null,
-    Int(i32),
-    Float(f32),
+    Int(i64),
+    Float(f64),
     String(String),
     Bool(bool),
     Array(Vec<WasmObject>),
@@ -23,6 +23,7 @@ pub enum WasmObject {
     Listing(Listing),
     Chapter(Chapter),
     Page(Page),
+    DeepLink(DeepLink),
 }
 
 impl WasmObject {
@@ -74,12 +75,12 @@ pub struct Response {
 impl KVC for Response {
     fn get_value(&self, key: String) -> Option<WasmObject> {
         match key.as_str() {
-            "status_code" => Some(WasmObject::Int(self.status_code)),
+            "status_code" => Some(WasmObject::Int(self.status_code as i64)),
             "data" => Some(WasmObject::Array(
                 self.data
                     .clone()
                     .into_iter()
-                    .map(|x| WasmObject::Int(x as i32))
+                    .map(|x| WasmObject::Int(x as i64))
                     .collect(),
             )),
             _ => None,
@@ -98,9 +99,10 @@ pub struct Request {
 
 pub struct WasmGlobalStore {
     std_pointer: i32,
-    pub std_descriptors: HashMap<i32, WasmObject>,
+    std_descriptors: HashMap<i32, WasmObject>,
     request_pointer: i32,
-    pub requests: HashMap<i32, Request>,
+    requests: HashMap<i32, Request>,
+    pub defaults: HashMap<String, WasmObject>,
 }
 
 impl WasmGlobalStore {
@@ -110,6 +112,7 @@ impl WasmGlobalStore {
             std_descriptors: HashMap::new(),
             request_pointer: -1,
             requests: HashMap::new(),
+            defaults: HashMap::new(),
         }
     }
 
@@ -121,6 +124,10 @@ impl WasmGlobalStore {
         self.std_pointer += 1;
         self.std_descriptors.insert(self.std_pointer, obj);
         self.std_pointer
+    }
+
+    pub fn set_value(&mut self, descriptor: i32, obj: WasmObject) {
+        self.std_descriptors.insert(descriptor, obj);
     }
 
     pub fn remove_value(&mut self, descriptor: i32) {
@@ -144,6 +151,10 @@ impl WasmGlobalStore {
 
     pub fn get_request(&self, descriptor: &i32) -> Option<&Request> {
         self.requests.get(descriptor)
+    }
+
+    pub fn set_request(&mut self, descriptor: i32, request: Request) {
+        self.requests.insert(descriptor, request);
     }
 
     pub fn remove_request(&mut self, descriptor: i32) {

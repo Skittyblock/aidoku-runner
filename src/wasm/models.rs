@@ -101,6 +101,10 @@ impl KVC for Manga {
     fn get_value(&self, key: String) -> Option<WasmObject> {
         match key.as_str() {
             "id" => Some(WasmObject::String(self.id.clone())),
+            "title" => match self.title.clone() {
+                Some(title) => Some(WasmObject::String(title)),
+                None => None,
+            },
             _ => None,
         }
     }
@@ -136,7 +140,7 @@ pub struct Filter {
 impl KVC for Filter {
     fn get_value(&self, key: String) -> Option<WasmObject> {
         match key.as_str() {
-            "type" => Some(WasmObject::Int(self.kind as i32)),
+            "type" => Some(WasmObject::Int(self.kind as i64)),
             "name" => Some(WasmObject::String(self.name.clone())),
             "value" => Some(*self.value.clone()),
             _ => None,
@@ -152,19 +156,26 @@ pub struct Listing {
 #[derive(Clone, Debug)]
 pub struct Chapter {
     pub id: String,
-    pub title: String,
-    pub volume: f32,
-    pub chapter: f32,
-    pub date_updated: f64,
-    pub scanlator: String,
-    pub url: String,
-    pub lang: String,
+    // pub manga_id: String,
+    pub title: Option<String>,
+    pub volume: Option<f32>,
+    pub chapter: Option<f32>,
+    pub date_uploaded: Option<f64>,
+    pub scanlator: Option<String>,
+    pub url: Option<String>,
+    pub lang: Option<String>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Page {
     pub index: i32,
-    pub url: String,
-    pub base64: String,
-    pub text: String,
+    pub image_url: Option<String>,
+    pub base64: Option<String>,
+    pub text: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DeepLink {
+    pub manga: Option<Manga>,
+    pub chapter: Option<Chapter>,
 }

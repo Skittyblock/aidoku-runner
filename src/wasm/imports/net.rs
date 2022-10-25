@@ -1,9 +1,8 @@
-use std::str::FromStr;
-
+use super::json;
+use super::wasm::env::{HttpMethod, Response, WasmEnv};
 use bytes::Bytes;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-
-use super::wasm::env::{HttpMethod, Response, WasmEnv};
+use std::str::FromStr;
 
 pub fn init(env: &WasmEnv, method: i32) -> i32 {
     env.store().new_request(HttpMethod::from(method))
@@ -55,7 +54,7 @@ pub fn send(env: &WasmEnv, descriptor: i32) {
             }
         };
         req.response = Some(response);
-        store.requests.insert(descriptor, req);
+        store.set_request(descriptor, req);
     }
 }
 
@@ -67,7 +66,7 @@ pub fn set_url(env: &WasmEnv, descriptor: i32, value: u32, len: u32) {
             _ => return,
         };
         req.url = Some(url);
-        store.requests.insert(descriptor, req);
+        store.set_request(descriptor, req);
     }
 }
 
@@ -87,7 +86,7 @@ pub fn set_header(
                 _ => return,
             };
             req.headers.insert(key, Some(value));
-            store.requests.insert(descriptor, req);
+            store.set_request(descriptor, req);
         }
     }
 }
@@ -100,7 +99,7 @@ pub fn set_body(env: &WasmEnv, descriptor: i32, value: u32, len: u32) {
             _ => return,
         };
         req.body = Some(data);
-        store.requests.insert(descriptor, req);
+        store.set_request(descriptor, req);
     }
 }
 
@@ -129,5 +128,18 @@ pub fn get_data(env: &WasmEnv, descriptor: i32, buff: i32, size: i32) {
             };
             env.write_bytes(data_buff, buff as u32);
         }
+    }
+}
+
+pub fn json(env: &WasmEnv, descriptor: i32) -> i32 {
+    let mut store = env.store();
+    if let Some(req) = store.get_request(&descriptor) {
+        if let Some(res) = req.response.clone() {
+            json::parse_str(&mut store, &String::from_utf8_lossy(&res.data))
+        } else {
+            -1
+        }
+    } else {
+        -1
     }
 }
