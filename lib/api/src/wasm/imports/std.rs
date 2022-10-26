@@ -164,7 +164,12 @@ pub fn read_date_string(
             .replace("yyyy", "%Y")
             .replace("MM", "%m")
             .replace("dd", "%d")
-            .replace("HH", "%H");
+            .replace("d", "%d")
+            .replace("EEEE", "%A")
+            .replace("EEE", "%a")
+            .replace("HH", "%H")
+            .replace("mm", "%M")
+            .replace("ss", "%S");
         let _locale = env.read_string(locale, locale_len).ok();
         let _timezone = env.read_string(timezone, timezone_len).ok();
         let date = NaiveDate::parse_from_str(str.as_str(), format.as_str());

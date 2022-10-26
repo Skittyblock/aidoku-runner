@@ -11,6 +11,7 @@ impl<T: FnOnce()> Drop for Deferred<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct AidokuSource {
     pub env: WasmEnv,
     pub store: Store,
@@ -18,7 +19,7 @@ pub struct AidokuSource {
 }
 
 impl AidokuSource {
-    pub fn new(module: &[u8]) -> Self {
+    pub fn from_bytes(module: &[u8]) -> Self {
         Self::new_with_env(module, WasmEnv::new())
     }
 

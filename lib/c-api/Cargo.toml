@@ -1,0 +1,11 @@
+[package]
+name = "aidoku-runner-c-api"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "aidoku"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+aidoku-runner = { version = "=0.1.0", path = "../api" }
